@@ -13,26 +13,74 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import Icon from '@/components/ui/icon';
 
-const Index = () => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [isFollowed, setIsFollowed] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [showTrends, setShowTrends] = useState(false);
-  const [showCollab, setShowCollab] = useState(false);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [recommendations, setRecommendations] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [uploadStep, setUploadStep] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedAiModel, setSelectedAiModel] = useState('all');
+interface Video {
+  id: number;
+  thumbnail: string;
+  title: string;
+  creator: string;
+  avatar: string;
+  likes: number;
+  views: number;
+  duration: string;
+  isPremium: boolean;
+  description: string;
+  tags: string[];
+  aiModel: string;
+  category: string;
+  trending: boolean;
+  collaborators: string[];
+  revenue: number;
+  recommendationScore?: number;
+}
 
-  const [videoData, setVideoData] = useState([
+interface UserProfile {
+  username: string;
+  displayName: string;
+  bio: string;
+  followers: number;
+  following: number;
+  videos: number;
+  likes: number;
+  avatar: string;
+  joinDate: string;
+  totalRevenue: number;
+  monthlyViews: number;
+  avgEngagement: number;
+}
+
+interface TrendingData {
+  topTags: Array<{
+    tag: string;
+    count: number;
+    growth: string;
+  }>;
+  topModels: Array<{
+    model: string;
+    usage: number;
+    revenue: string;
+  }>;
+}
+
+const Index: React.FC = () => {
+  const [isLiked, setIsLiked] = useState<boolean>(false);
+  const [isFollowed, setIsFollowed] = useState<boolean>(false);
+  const [showComments, setShowComments] = useState<boolean>(false);
+  const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [showUpload, setShowUpload] = useState<boolean>(false);
+  const [showProfile, setShowProfile] = useState<boolean>(false);
+  const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [showTrends, setShowTrends] = useState<boolean>(false);
+  const [showCollab, setShowCollab] = useState<boolean>(false);
+  const [currentVideoIndex] = useState<number>(0);
+  const [recommendations, setRecommendations] = useState<Video[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [uploadStep, setUploadStep] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedAiModel, setSelectedAiModel] = useState<string>('all');
+
+  const [videoData, setVideoData] = useState<Video[]>([
     {
       id: 1,
       thumbnail: '/img/0497b10b-95d5-41c6-af3d-972e6eb9e529.jpg',
@@ -107,7 +155,7 @@ const Index = () => {
     }
   ]);
 
-  const [userProfile] = useState({
+  const [userProfile] = useState<UserProfile>({
     username: 'AICreator2024',
     displayName: 'Творец Будущего',
     bio: 'Создаю невероятные миры с помощью ИИ 🚀',
@@ -122,7 +170,7 @@ const Index = () => {
     avgEngagement: 8.7
   });
 
-  const [trendingData] = useState({
+  const [trendingData] = useState<TrendingData>({
     topTags: [
       { tag: 'киберпанк', count: 15420, growth: '+12%' },
       { tag: 'космос', count: 12890, growth: '+8%' },
@@ -136,7 +184,7 @@ const Index = () => {
     ]
   });
 
-  const filteredVideos = videoData.filter(video => {
+  const filteredVideos: Video[] = videoData.filter(video => {
     const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          video.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          video.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -148,7 +196,7 @@ const Index = () => {
   });
 
   useEffect(() => {
-    const generateRecommendations = () => {
+    const generateRecommendations = (): void => {
       const currentVideo = videoData[currentVideoIndex];
       if (!currentVideo) return;
 
@@ -167,7 +215,7 @@ const Index = () => {
           
           return { ...video, recommendationScore: score };
         })
-        .sort((a, b) => b.recommendationScore - a.recommendationScore)
+        .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
         .slice(0, 3);
 
       setRecommendations(recommended);
@@ -176,7 +224,7 @@ const Index = () => {
     generateRecommendations();
   }, [currentVideoIndex, videoData, isPremium]);
 
-  const handleVideoUpload = async (formData: any) => {
+  const handleVideoUpload = async (formData: Record<string, any>): Promise<void> => {
     setIsGenerating(true);
     setUploadProgress(0);
     
@@ -194,20 +242,20 @@ const Index = () => {
       setUploadStep(step.message);
     }
     
-    const newVideo = {
+    const newVideo: Video = {
       id: videoData.length + 1,
       thumbnail: '/img/0497b10b-95d5-41c6-af3d-972e6eb9e529.jpg',
-      title: formData.title,
+      title: formData.title as string,
       creator: 'Вы',
       avatar: 'YOU',
       likes: 0,
       views: 0,
       duration: '1:00',
       isPremium: formData.isPremium === 'on',
-      description: formData.description,
+      description: formData.description as string,
       tags: formData.tags?.split(',').map((tag: string) => tag.trim()) || [],
-      aiModel: formData.aiModel,
-      category: formData.category,
+      aiModel: formData.aiModel as string,
+      category: formData.category as string,
       trending: false,
       collaborators: formData.collaborators?.split(',').map((c: string) => c.trim()) || [],
       revenue: 0
